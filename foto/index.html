@@ -13,6 +13,9 @@
   O QR da extensão abre: https://arionwesley.com.br/foto/#<id>.<token>
   A foto é reduzida aqui (no máximo 2000 px, JPEG; a PNG, como os prints de tela, continua PNG) e vai direto para a função
   "celular" do Supabase do Regula UPA. O PDF vai como está (até 15 MB; o servidor aceita até 50 MB e 15 arquivos por código).
+  O AVISO ANTES (v1.3): assim que os arquivos são escolhidos, a página avisa o servidor ("anunciar": uma chave e o nome de
+  cada um) — a extensão já mostra o esqueleto com o nome — e só depois reduz e envia, um de cada vez (o próximo já vai
+  sendo reduzido enquanto o anterior sobe). Nome: "Foto N" da câmera; o nome do arquivo da galeria e do PDF.
   Nada fica neste site: ele só entrega esta página.
 -->
 <style>
@@ -62,7 +65,10 @@
   // O Supabase do Regula UPA (o mesmo do conta_config.js da extensão; a chave pública é pública de verdade)
   var FUNCAO = 'https://ttiinhmiuiuetbbqaogv.supabase.co/functions/v1/celular';
   var CHAVE = 'sb_publishable_C6x6-39DReS2bdLSMsc-QQ_4e4Bcn-b';
-  var LADO_MAX = 2000, QUALIDADE = 0.85;
+  // A foto já sai no tamanho final da folha do PDF da extensão (A4, ~170 pontos por polegada: no máximo 1874 px no lado
+  // maior e 1292 no menor), em JPEG 85% — lá ela entra como chegou, sem ser comprimida de novo
+  var LADO_MAX = 1874, LADO_MENOR_MAX = 1292, QUALIDADE = 0.85;
+  function escalaDaFolha(w, h) { return Math.min(1, LADO_MAX / Math.max(w, h), LADO_MENOR_MAX / Math.min(w, h)); }
   var MAX_ARQUIVO = 15 * 1024 * 1024; // o mesmo limite do servidor (por arquivo)
   var ICONE_PDF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z"/><path d="M14 3v5h5"/></svg>';
 
@@ -97,8 +103,8 @@
   // PNG (png = true: o print de tela continua nítido)
   function reduzir(arquivo, png) {
     var desenhar = function (fonte, w, h) {
-      var esc = Math.min(1, LADO_MAX / Math.max(w, h));
-      var c = document.createElement('canvas'); c.width = Math.round(w * esc); c.height = Math.round(h * esc);
+      var esc = escalaDaFolha(w, h);
+      var c = document.createElement('canvas'); c.width = Math.max(1, Math.floor(w * esc)); c.height = Math.max(1, Math.floor(h * esc));
       c.getContext('2d').drawImage(fonte, 0, 0, c.width, c.height);
       return new Promise(function (ok, falha) { c.toBlob(function (b) { b ? ok(b) : falha(new Error('foto ilegível')); }, png ? 'image/png' : 'image/jpeg', QUALIDADE); });
     };
@@ -137,7 +143,7 @@
     if (arquivo.type === 'image/png') {
       // PNG: vai como está se já for pequena; senão, reduzida em PNG; grande demais ainda assim, em JPEG
       return medidas(arquivo).then(function (m) {
-        if (m && Math.max(m.w, m.h) <= LADO_MAX && arquivo.size <= MAX_ARQUIVO) return { corpo: arquivo, tipo: 'image/png' };
+        if (m && escalaDaFolha(m.w, m.h) === 1 && arquivo.size <= MAX_ARQUIVO) return { corpo: arquivo, tipo: 'image/png' };
         return reduzir(arquivo, true).then(function (png) {
           if (png.size <= MAX_ARQUIVO) return { corpo: png, tipo: 'image/png' };
           return reduzir(arquivo, false).then(function (jpeg) { return { corpo: jpeg, tipo: 'image/jpeg' }; });
@@ -150,48 +156,85 @@
     });
   }
 
-  function enviar(arquivo, li) {
-    var st = li.querySelector('.st');
-    var pdf = ehPdf(arquivo);
+  // A chave de cada arquivo (o mesmo arquivo no aviso e no envio)
+  function novaChave() {
+    var b = new Uint8Array(10), s = '';
+    (window.crypto || window.msCrypto).getRandomValues(b);
+    for (var i = 0; i < b.length; i++) s += (b[i] % 36).toString(36);
+    return s;
+  }
+  function semExtensao(nome) { return String(nome || '').replace(/\.[a-z0-9]{1,5}$/i, '').trim(); }
+  // O aviso (os nomes) vai antes de qualquer arquivo: o primeiro só sobe depois dele (no máximo 4 s de espera — enquanto
+  // isso, a foto já vai sendo reduzida)
+  function anunciar(itens) {
+    var aviso = pedir({ acao: 'anunciar', id: envio, token: token, arquivos: itens.map(function (i) { return { chave: i.chave, nome: i.nome, tipo: i.pdf ? 'pdf' : 'foto' }; }) })
+      .catch(function () { /* sem o aviso, o arquivo chega do mesmo jeito */ });
+    return Promise.race([aviso, new Promise(function (ok) { setTimeout(ok, 4000); })]);
+  }
+
+  // Envia um arquivo já preparado (reduzido); falhou de vez: avisa o servidor (o esqueleto some da extensão)
+  function enviar(item, preparado) {
+    var st = item.li.querySelector('.st');
     st.className = 'st'; st.textContent = 'enviando...';
-    var velho = li.querySelector('button'); if (velho) velho.remove();
-    return preparar(arquivo).then(function (pronto) {
-      if (!pdf) li.querySelector('img').src = URL.createObjectURL(pronto.corpo);
-      var url = FUNCAO + '?acao=enviar&id=' + encodeURIComponent(envio) + '&token=' + encodeURIComponent(token);
+    var velho = item.li.querySelector('button'); if (velho) velho.remove();
+    return (preparado || preparar(item.arquivo)).then(function (pronto) {
+      if (!item.pdf) item.li.querySelector('img').src = URL.createObjectURL(pronto.corpo);
+      var url = FUNCAO + '?acao=enviar&id=' + encodeURIComponent(envio) + '&token=' + encodeURIComponent(token) + '&chave=' + item.chave;
       return fetch(url, { method: 'POST', headers: { 'Content-Type': pronto.tipo, apikey: CHAVE }, body: pronto.corpo });
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (r.status === 410) { vencido(j.erro); throw new Error(j.erro); }
         if (!r.ok) throw new Error(j.erro || 'falhou');
         enviados += 1; noLimite();
-        st.className = 'st ok'; st.innerHTML = '<svg class="ok-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' + (pdf ? 'enviado' : 'enviada');
+        st.className = 'st ok'; st.innerHTML = '<svg class="ok-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' + (item.pdf ? 'enviado' : 'enviada');
       });
     }).catch(function (e) {
       st.className = 'st erro'; st.textContent = (e && e.message) || 'falhou';
-      if (/grande demais|limite|máximo|só foto/i.test(st.textContent)) return; // de novo não adianta
+      pedir({ acao: 'falhou', id: envio, token: token, chave: item.chave }).catch(function () {});
+      if (/grande demais|limite|máximo|só foto|venc/i.test(st.textContent)) return; // de novo não adianta
       var b = document.createElement('button'); b.textContent = 'De novo';
-      b.onclick = function () { enviar(arquivo, li); };
-      li.appendChild(b);
+      b.onclick = function () { var aviso = anunciar([item]); fila = fila.then(function () { return aviso.then(function () { return enviar(item); }); }); };
+      item.li.appendChild(b);
     });
   }
 
-  function escolhidos(input) {
+  // Os arquivos escolhidos: aparecem na lista, o servidor é avisado na hora (com os nomes) e eles sobem um de cada vez
+  var fila = Promise.resolve();
+  function escolhidos(input, origem) {
     var arquivos = Array.prototype.slice.call(input.files || []);
     input.value = '';
-    arquivos.reduce(function (fila, arquivo) {
+    if (!arquivos.length) return;
+    var itens = arquivos.map(function (arquivo) {
       n += 1;
       var pdf = ehPdf(arquivo);
+      var nome = pdf ? (arquivo.name || 'PDF ' + n) : (origem === 'galeria' && semExtensao(arquivo.name)) || 'Foto ' + n;
       var li = document.createElement('li');
-      li.innerHTML = (pdf ? '<span class="doc">' + ICONE_PDF + '</span>' : '<img alt="">') + '<span class="nome"></span><span class="st">...</span>';
-      li.querySelector('.nome').textContent = pdf ? (arquivo.name || 'PDF ' + n) : 'Foto ' + n;
+      li.innerHTML = (pdf ? '<span class="doc">' + ICONE_PDF + '</span>' : '<img alt="">') + '<span class="nome"></span><span class="st">na fila</span>';
+      li.querySelector('.nome').textContent = nome;
       $('lista').insertBefore(li, $('lista').firstChild);
-      return fila.then(function () { return enviar(arquivo, li); });
-    }, Promise.resolve());
+      return { arquivo: arquivo, pdf: pdf, nome: nome, chave: novaChave(), li: li };
+    });
+    var aviso = anunciar(itens);
+    // um de cada vez; o próximo já vai sendo reduzido enquanto o anterior sobe
+    var preparos = [];
+    var preparo = function (k) {
+      if (!preparos[k]) { preparos[k] = preparar(itens[k].arquivo); preparos[k].catch(function () {}); }
+      return preparos[k];
+    };
+    itens.forEach(function (item, k) {
+      fila = fila.then(function () {
+        var p = preparo(k);
+        if (k + 1 < itens.length) preparo(k + 1);
+        return aviso.then(function () { return enviar(item, p); });
+      });
+    });
   }
-  $('camera').addEventListener('change', function () { escolhidos(this); });
-  $('galeria').addEventListener('change', function () { escolhidos(this); });
-  $('pdf').addEventListener('change', function () { escolhidos(this); });
+  $('camera').addEventListener('change', function () { escolhidos(this, 'camera'); });
+  $('galeria').addEventListener('change', function () { escolhidos(this, 'galeria'); });
+  $('pdf').addEventListener('change', function () { escolhidos(this, 'pdf'); });
 
+  // um QR novo lido com esta página aberta (só o "#" muda e o navegador não recarrega): recomeça com o código novo
+  window.addEventListener('hashchange', function () { if (location.hash.length > 1) location.reload(); });
   if (!/^[0-9a-f-]{36}$/i.test(envio) || token.length < 20) { vencido('Abra pelo QR code da extensão.'); return; }
   history.replaceState(null, '', location.pathname); // o token sai da barra de endereço (e do histórico)
 
