@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evolui · Política de privacidade</title>
+<!--
+  v0.224.160 — a política de privacidade da Evolui, que a Meta pede no app do WhatsApp (o "Esqueci a senha" pelo
+  WhatsApp: servidor/COMO-CONFIGURAR.md, seção 7d). Fica em https://arionwesley.com.br/evolui/privacidade/ (este arquivo é o
+  index.html dessa pasta). Modelo: a do Regula UPA (servidor/referencia_regula_upa/site/privacidade.html). RASCUNHO para o
+  usuário revisar antes de publicar.
+-->
+<style>
+  :root { --tx:#102a43; --tx2:#52606d; --azul:#1e40af; --borda:#e4e7eb; }
+  body { margin:0; background:#f8fafc; color:var(--tx); font:16px/1.6 -apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:40px 20px 60px; }
+  h1 { font-size:28px; margin:0 0 4px; } .data { color:var(--tx2); font-size:14px; margin-bottom:28px; }
+  h2 { font-size:19px; margin:30px 0 8px; color:var(--azul); }
+  ul { padding-left:22px; } li { margin:4px 0; } a { color:var(--azul); }
+  .cartao { background:#fff; border:1px solid var(--borda); border-radius:10px; padding:16px 18px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Evolui — Política de privacidade</h1>
+  <div class="data">Atualizada em 04/11/2026</div>
+
+  <div class="cartao">A Evolui é uma extensão do Google Chrome para as equipes de saúde dos hospitais de Rondônia que usam o
+  Hospub. Ela lê a ficha do paciente aberta no Hospub e organiza, num painel ao lado da ficha, o que a equipe acompanha:
+  diagnósticos, exames, prescrições, pendências e documentos. O profissional revisa tudo; a extensão não altera o
+  prontuário do Hospub sozinha.</div>
+
+  <h2>1. Dados do profissional (a conta)</h2>
+  <ul>
+    <li>Guardamos o cadastro: nome, CPF (usado como login), número e UF do conselho (CRM, COREN...), cargo ou especialidade,
+      área de atuação, orientadores, celular e e-mail para os documentos. Eles servem para entrar na extensão e para
+      preencher os documentos que o profissional gera.</li>
+    <li>A senha não é guardada como foi digitada: o provedor de autenticação (Supabase) guarda só uma forma cifrada dela, e nós
+      não temos acesso a ela.</li>
+    <li><b>Esqueci a senha</b>: para criar uma senha nova, o profissional manda, do WhatsApp do celular do cadastro, uma
+      mensagem pronta com um código para o número da Evolui, que usa a API oficial do WhatsApp (Meta). O servidor recebe o
+      número de quem mandou e o texto da mensagem só para conferir o código e se o número é o do cadastro. A mensagem e o
+      número não são guardados: fica só a hora em que a mensagem chegou, e o pedido é apagado em até 2 dias. A Evolui não manda
+      mensagens a ninguém.</li>
+    <li>Guardamos também contagens de uso (quantos pedidos cada conta fez, e o custo da inteligência artificial), para limitar
+      o uso e controlar o custo. Sem nenhum dado de paciente.</li>
+  </ul>
+
+  <h2>2. Dados do paciente</h2>
+  <ul>
+    <li>A extensão lê, no Hospub, a ficha que o profissional abriu: a identificação do paciente, as evoluções, as prescrições,
+      os exames e os documentos. Essa leitura acontece no navegador do profissional.</li>
+    <li><b>O painel do paciente</b> (o da equipe) é guardado no nosso servidor <b>cifrado pela própria extensão</b>: o servidor
+      guarda um número que não mostra o registro do paciente e o conteúdo codificado. Quem tem conta na Evolui e abre a ficha
+      daquele paciente no Hospub vê esse painel.</li>
+    <li><b>O painel de cada profissional</b> (as pendências, os lembretes, a lista "Meus pacientes" e os modelos de texto) é
+      cifrado com a chave da conta dele. Para que esquecer a senha não apague esse painel, uma cópia dessa chave fica guardada
+      no servidor, protegida por um segredo do próprio servidor, e só é usada depois que o profissional entra com a senha ou
+      confirma a troca da senha pelo WhatsApp. Por isso, quem administra o servidor tecnicamente conseguiria abrir esse painel;
+      não fazemos isso.</li>
+    <li><b>A atualização pelo prontuário com inteligência artificial</b> (só quando o profissional pede): os laudos dos exames,
+      as prescrições ou as evoluções vão ao nosso servidor e dele ao modelo Claude (Anthropic), <b>sem a identificação do
+      paciente</b> — as linhas com o nome, o registro, o CNS e o nome da mãe saem, e o nome que aparece no texto vira um
+      marcador. O resultado volta para a extensão. O nosso servidor não guarda esse conteúdo.</li>
+    <li><b>O QR do passômetro</b>: a folha do passômetro pode trazer um código QR por paciente, que abre o painel dele no
+      celular, só para ler, por 4 horas. A cópia do painel fica cifrada no servidor, a chave vai só no QR, e a cópia é apagada
+      quando vence.</li>
+    <li><b>A equipe</b>: a lista dos pacientes da equipe fica cifrada com a chave da equipe; o servidor guarda quem é membro
+      (o nome e a conta).</li>
+    <li><b>Os documentos</b> (receitas, requisições, a ficha do CRUE...) são montados no próprio computador.</li>
+    <li><b>O cofre de senhas</b> (os acessos do profissional a outros sistemas) fica só no computador, cifrado com a senha da
+      conta; ele não vai para o servidor. Para que esquecer a senha não o apague, a chave dele também fica guardada no
+      computador, protegida por um segredo do servidor que só é entregue depois da senha certa.</li>
+  </ul>
+
+  <h2>3. O que não fazemos</h2>
+  <ul>
+    <li>Não vendemos nem compartilhamos dados com terceiros, a não ser os provedores necessários ao funcionamento: Supabase (as
+      contas e os painéis), Google Cloud (o servidor da inteligência artificial e o que recebe as mensagens do WhatsApp),
+      Anthropic (a inteligência artificial) e Meta (o WhatsApp: só a mensagem do "Esqueci a senha", que o próprio
+      profissional manda).</li>
+    <li>Não usamos os dados para publicidade nem para avaliar crédito.</li>
+    <li>Não salvamos nada no prontuário do Hospub sem que o profissional peça e confira: o que a extensão põe lá (o texto de
+      uma evolução, por exemplo) só vale quando ele salva.</li>
+  </ul>
+
+  <h2>4. Onde ficam os dados</h2>
+  <ul>
+    <li>Servidores: Supabase e Google Cloud, na região de São Paulo (Brasil). A inteligência artificial (Anthropic) processa o
+      texto, sem a identificação do paciente, nos Estados Unidos, e não o guarda para treinar modelos. A comunicação é sempre
+      criptografada (HTTPS).</li>
+    <li>No computador: a sessão da conta, a cópia local dos painéis e o cofre ficam no armazenamento da extensão no Chrome.</li>
+  </ul>
+
+  <h2>5. Seus direitos (LGPD)</h2>
+  <ul>
+    <li>Você pode ver e corrigir o seu cadastro na própria extensão (o lápis ao lado do seu nome).</li>
+    <li>Para excluir a conta e o seu painel, use "Excluir minha conta" na edição do cadastro ou escreva para o contato abaixo.
+      O painel do paciente, que é da equipe, continua para os outros profissionais.</li>
+  </ul>
+
+  <h2>6. Contato</h2>
+  <p>Arion Wesley Costa Santos — <a href="mailto:arionwesley@gmail.com">arionwesley@gmail.com</a></p>
+</main>
+</body>
+</html>
