@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-807E9bG1ZN/1hTb6okNKkyBgb2v2FGi5BegU/TX34lw='; style-src 'sha256-kshWqd6r7QvRRop1vu6Gw+yO1waDIf1shcOx7EOA7Y4='; connect-src https://dvmtzobsynzbkewyglci.supabase.co; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GmIYPgnFg8x5aCm7cCbVE2WGE2XkquUaYio0bdgGjbQ='; style-src 'sha256-kshWqd6r7QvRRop1vu6Gw+yO1waDIf1shcOx7EOA7Y4='; connect-src https://evolui.arionwesley.com.br; img-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Evolui · Painel do paciente</title>
@@ -12,7 +12,8 @@
   Fica em https://arionwesley.com.br/evolui/ (este arquivo é o index.html dessa pasta), como a /foto/ do Regula UPA.
   O QR de cada paciente abre: https://arionwesley.com.br/evolui/#<o id da cópia>.<a chave> — o fragmento (depois do "#")
   não vai a servidor nenhum. A página pede a cópia cifrada ao Supabase da Evolui pelo id (o RPC passometro_ler) e a abre
-  aqui com a chave. Nada fica neste site: ele só entrega esta página.
+  aqui com a chave. Nada fica neste site: ele só entrega esta página. (v0.224.256: o servidor é o do VPS,
+  evolui.arionwesley.com.br — a CSP e as duas constantes do script)
   A CSP leva o hash do estilo e do script daqui: mudou um dos dois, o hash muda junto (o testes/passometro_qr.test.js
   confere e diz o novo).
 -->
@@ -60,10 +61,10 @@
 (function () {
   'use strict';
 
-  // o projeto do Supabase da Evolui (conta_config.js da extensão): o endereço e a chave publishable — públicos de verdade
-  // (quem protege é o RPC: só a cópia no prazo, pelo id)
-  const SUPABASE_URL = 'https://dvmtzobsynzbkewyglci.supabase.co';
-  const CHAVE_PUBLICA = 'sb_publishable_NXkTs9bp4zyO6Q9Zla8Y-w_Vn_XBm7z';
+  // o servidor da Evolui (conta_config.js da extensão; v0.224.256: o Supabase do VPS): o endereço e a chave publishable —
+  // públicos de verdade (quem protege é o RPC: só a cópia no prazo, pelo id)
+  const SUPABASE_URL = 'https://evolui.arionwesley.com.br';
+  const CHAVE_PUBLICA = 'sb_publishable_eck6SDI-tTJDFRI4bWtvr0_rktoJiM6';
   const AAD = new TextEncoder().encode('evolui-qr-1'); // (o mesmo do passometro_qr.js)
   const deBase64 = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
   const deBase64url = (t) => deBase64(t.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (t.length % 4)) % 4));
