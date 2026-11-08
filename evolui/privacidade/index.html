@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Evolui · Política de privacidade</title>
 <!--
-  v0.224.160 — a política de privacidade da Evolui, que a Meta pede no app do WhatsApp (o "Esqueci a senha" pelo
-  WhatsApp: servidor/COMO-CONFIGURAR.md, seção 7d). Fica em https://arionwesley.com.br/evolui/privacidade/ (este arquivo é o
-  index.html dessa pasta). Modelo: a do Regula UPA (servidor/referencia_regula_upa/site/privacidade.html). RASCUNHO para o
-  usuário revisar antes de publicar.
+  v0.224.160 — a política de privacidade da Evolui. Fica em https://arionwesley.com.br/evolui/privacidade/ (este arquivo é o
+  index.html dessa pasta; no ar desde 04/11/2026). Modelo: a do Regula UPA (servidor/referencia_regula_upa/site/privacidade.html).
+  v0.224.227: o Pix de 1 centavo (a conta confirmada e o "Esqueci a senha") e o login do Hospub, no lugar do WhatsApp e da
+  Meta — o texto novo, para o usuário revisar e publicar. v0.224.240: o Pix no cadastro (a conta só nasce com ele), o aceite
+  dos Termos de Uso guardado e a coleta em segundo plano — a par dos termos novos.
 -->
 <style>
   :root { --tx:#102a43; --tx2:#52606d; --azul:#1e40af; --borda:#e4e7eb; }
@@ -23,7 +24,7 @@
 <body>
 <main>
   <h1>Evolui — Política de privacidade</h1>
-  <div class="data">Atualizada em 04/11/2026</div>
+  <div class="data">Atualizada em 07/11/2026</div>
 
   <div class="cartao">A Evolui é uma extensão do Google Chrome para as equipes de saúde dos hospitais de Rondônia que usam o
   Hospub. Ela lê a ficha do paciente aberta no Hospub e organiza, num painel ao lado da ficha, o que a equipe acompanha:
@@ -37,11 +38,17 @@
       preencher os documentos que o profissional gera.</li>
     <li>A senha não é guardada como foi digitada: o provedor de autenticação (Supabase) guarda só uma forma cifrada dela, e nós
       não temos acesso a ela.</li>
-    <li><b>Esqueci a senha</b>: para criar uma senha nova, o profissional manda, do WhatsApp do celular do cadastro, uma
-      mensagem pronta com um código para o número da Evolui, que usa a API oficial do WhatsApp (Meta). O servidor recebe o
-      número de quem mandou e o texto da mensagem só para conferir o código e se o número é o do cadastro. A mensagem e o
-      número não são guardados: fica só a hora em que a mensagem chegou, e o pedido é apagado em até 2 dias. A Evolui não manda
-      mensagens a ninguém.</li>
+    <li><b>A confirmação pelo Pix</b>: para criar a conta, depois de conferir os dados do cadastro, a Evolui gera uma cobrança
+      Pix de R$ 0,01 com o CPF e o nome do cadastro; a conta só é criada depois que ela é paga de uma conta bancária no
+      mesmo CPF. O "Esqueci a senha" pede outra igual. A cobrança é feita pela Efí; do pagamento, o servidor guarda só a
+      data. Os pedidos do cadastro e da troca da senha são apagados em até 2 dias.</li>
+    <li><b>O aceite do Termo de Funcionamento e Responsabilidade</b>: guardamos o CPF, a versão do termo, o resumo
+      criptográfico (SHA-256) do texto aceito, a data e a hora do aceite e um resumo criptográfico do endereço de rede (o IP
+      não fica em claro), também depois da exclusão da conta, para cumprir obrigações legais e defender direitos (LGPD, art.
+      7º, II e VI, e art. 16).</li>
+    <li><b>O login do Hospub</b>: ao abrir uma ficha, a extensão lê o CPF de quem está logado no Hospub e, se for o da conta
+      aberta, avisa o servidor; o CPF de outra pessoa não sai do computador. A conta que passa 60 dias sem o Hospub para de
+      ver os pacientes, sem perder nada.</li>
     <li>Guardamos também contagens de uso (quantos pedidos cada conta fez, e o custo da inteligência artificial), para limitar
       o uso e controlar o custo. Sem nenhum dado de paciente.</li>
   </ul>
@@ -50,13 +57,16 @@
   <ul>
     <li>A extensão lê, no Hospub, a ficha que o profissional abriu: a identificação do paciente, as evoluções, as prescrições,
       os exames e os documentos. Essa leitura acontece no navegador do profissional.</li>
+    <li><b>Em segundo plano</b>: com o login do profissional no Hospub, a extensão também pede ao Hospub, sozinha, as
+      informações dos pacientes que ele acompanha e, quando essa função existir, as listas de internação dos hospitais onde
+      ele trabalha (o censo automático) — como autorizado nos <a href="../termos/">Termos de Uso</a>.</li>
     <li><b>O painel do paciente</b> (o da equipe) é guardado no nosso servidor <b>cifrado pela própria extensão</b>: o servidor
-      guarda um número que não mostra o registro do paciente e o conteúdo codificado. Quem tem conta na Evolui e abre a ficha
-      daquele paciente no Hospub vê esse painel.</li>
+      guarda um número que não mostra o registro do paciente e o conteúdo codificado. Quem tem a conta confirmada na Evolui
+      e abre a ficha daquele paciente no Hospub vê esse painel.</li>
     <li><b>O painel de cada profissional</b> (as pendências, os lembretes, a lista "Meus pacientes" e os modelos de texto) é
       cifrado com a chave da conta dele. Para que esquecer a senha não apague esse painel, uma cópia dessa chave fica guardada
       no servidor, protegida por um segredo do próprio servidor, e só é usada depois que o profissional entra com a senha ou
-      confirma a troca da senha pelo WhatsApp. Por isso, quem administra o servidor tecnicamente conseguiria abrir esse painel;
+      confirma a troca da senha pelo Pix. Por isso, quem administra o servidor tecnicamente conseguiria abrir esse painel;
       não fazemos isso.</li>
     <li><b>A atualização pelo prontuário com inteligência artificial</b> (só quando o profissional pede): os laudos dos exames,
       as prescrições ou as evoluções vão ao nosso servidor e dele ao modelo Claude (Anthropic), <b>sem a identificação do
@@ -76,9 +86,8 @@
   <h2>3. O que não fazemos</h2>
   <ul>
     <li>Não vendemos nem compartilhamos dados com terceiros, a não ser os provedores necessários ao funcionamento: Supabase (as
-      contas e os painéis), Google Cloud (o servidor da inteligência artificial e o que recebe as mensagens do WhatsApp),
-      Anthropic (a inteligência artificial) e Meta (o WhatsApp: só a mensagem do "Esqueci a senha", que o próprio
-      profissional manda).</li>
+      contas e os painéis), Google Cloud (o servidor da inteligência artificial e o das cobranças Pix), Anthropic (a
+      inteligência artificial) e Efí (as cobranças Pix de R$ 0,01).</li>
     <li>Não usamos os dados para publicidade nem para avaliar crédito.</li>
     <li>Não salvamos nada no prontuário do Hospub sem que o profissional peça e confira: o que a extensão põe lá (o texto de
       uma evolução, por exemplo) só vale quando ele salva.</li>
